@@ -12,8 +12,8 @@ KEY_FILE_LOCATION = './credentials/credentials.json'
 
 VIEW_ID = ''
 
-START_DATE = '2020-03-01'
-END_DATE   = '2020-03-31'
+START_DATE = '2020-06-01'
+END_DATE   = '2020-06-30'
 
 def initialize_analyticsreporting():
   credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -83,7 +83,7 @@ def fetch_data(start_date = START_DATE, end_date = END_DATE):
   ).execute().get('reports')[0].get('data').get('rows')
 
 # Main
-def main():
+def main(interval):
   global API
   API = initialize_analyticsreporting()
 
@@ -93,13 +93,18 @@ def main():
   cache = defaultdict(int)
   counts = []
 
-  # Adjust this to change between daily, weekly, etc
-  delta = timedelta(days=1)
+  # Subtract 1 because GA date ranges are inclusive
+  delta = timedelta(days=interval -1)
 
   # Make a query for each day and get the users who visited that day
   while start_date <= end_date:
+
+    query_end = start_date + delta
+
     print (start_date.strftime('%Y-%m-%d'))
-    result = fetch_data(start_date.strftime('%Y-%m-%d'), start_date.strftime('%Y-%m-%d'))
+    print (query_end.strftime('%Y-%m-%d'))
+
+    result = fetch_data(start_date.strftime('%Y-%m-%d'), query_end.strftime('%Y-%m-%d'))
 
     # Add users to the dictionary
     for row in result:
@@ -107,7 +112,7 @@ def main():
       cache[id] += 1
 
     # Increment start date
-    start_date += delta
+    start_date = query_end + timedelta(days=1)
 
   # Total number of user ids in query
   total_users = len(cache)
@@ -137,4 +142,5 @@ def main():
 
 
 if __name__ == '__main__':
-  main()
+  # For daily, pass 1; for weekly, pass 7
+  main(1)
